@@ -72,7 +72,7 @@ final class CipherCore {
      * The property 'jdk.nativeCBC' is used to disable Native CBC alone,
      * 'jdk.nativeGCM' is used to disable Native GCM alone and
      * 'jdk.nativeCrypto' is used to disable all native cryptos (Digest,
-     * CBC, GCM, and RSA).
+     * CBC, GCM, RSA, and EC).
      */
     private static boolean useNativeCrypto;
 

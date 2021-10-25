@@ -22,10 +22,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * ===========================================================================
+ * (c) Copyright IBM Corp. 2018, 2021 All Rights Reserved
+ * ===========================================================================
+ */
+
 package java.security.interfaces;
 
 import java.security.PublicKey;
 import java.security.spec.ECPoint;
+
+import jdk.crypto.jniprovider.NativeCrypto;
 
 /**
  * The interface to an elliptic curve (EC) public key.
@@ -47,9 +56,29 @@ public interface ECPublicKey extends PublicKey, ECKey {
     */
     static final long serialVersionUID = -3314988629879632826L;
 
+    static final NativeCrypto nativeCrypto = NativeCrypto.getNativeCrypto();
+
     /**
      * Returns the public point W.
      * @return the public point W.
      */
     ECPoint getW();
+
+    /**
+     * Returns the native EC public key context pointer.
+     * @return the native EC public key context pointer or -1 on error.
+     */
+    long getNativePtr();
+
+    static final class ECCleanerRunnable implements Runnable {
+        private final long ECKey;
+
+        public ECCleanerRunnable(long key) {
+            this.ECKey = key;
+        }
+
+        public void run() {
+            nativeCrypto.ECDestroyKey(ECKey);
+        }
+    }
 }

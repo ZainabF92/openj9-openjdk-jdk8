@@ -1,6 +1,6 @@
 /*
  * ===========================================================================
- * (c) Copyright IBM Corp. 2018, 2019 All Rights Reserved
+ * (c) Copyright IBM Corp. 2018, 2021 All Rights Reserved
  * ===========================================================================
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,5 +180,53 @@ public class NativeCrypto {
                                   int kLen,
                                   byte[] m,
                                   long RSAPublicKey);
+
+    /* Native EC interfaces */
+    public final native int ECCreatePublicKey(long key,
+                                              byte[] x,
+                                              int xLen,
+                                              byte[] y,
+                                              int yLen);
+
+    public final native int ECCreatePrivateKey(long key,
+                                               byte[] s,
+                                               int sLen);
+
+    public final native long ECEncodeGFp(byte[] a,
+                                         int aLen,
+                                         byte[] b,
+                                         int bLen,
+                                         byte[] p,
+                                         int pLen,
+                                         byte[] x,
+                                         int xLen,
+                                         byte[] y,
+                                         int yLen,
+                                         byte[] n,
+                                         int nLen,
+                                         byte[] h,
+                                         int hLen);
+
+    public final native long ECEncodeGF2m(byte[] a,
+                                          int aLen,
+                                          byte[] b,
+                                          int bLen,
+                                          byte[] p,
+                                          int pLen,
+                                          byte[] x,
+                                          int xLen,
+                                          byte[] y,
+                                          int yLen,
+                                          byte[] n,
+                                          int nLen,
+                                          byte[] h,
+                                          int hLen);
+
+    public final native int ECDestroyKey(long key);
+
+    public final native int ECDeriveKey(long publicKey,
+                                        long privateKey,
+                                        byte[] secret,
+                                        int secretLen);
 
 }

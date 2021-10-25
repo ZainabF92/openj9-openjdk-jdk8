@@ -23,6 +23,12 @@
  * questions.
  */
 
+/*
+ * ===========================================================================
+ * (c) Copyright IBM Corp. 2018, 2021 All Rights Reserved
+ * ===========================================================================
+ */
+
 package sun.security.ec;
 
 import java.io.IOException;
@@ -40,6 +46,9 @@ import sun.security.util.ECParameters;
 import sun.security.util.ECUtil;
 import sun.security.x509.AlgorithmId;
 import sun.security.pkcs.PKCS8Key;
+
+import jdk.crypto.jniprovider.NativeCrypto;
+import sun.misc.Cleaner;
 
 /**
  * Key implementation for EC private keys.
@@ -71,6 +80,9 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     private BigInteger s;       // private value
     private byte[] arrayS;      // private value as a little-endian array
     private ECParameterSpec params;
+
+    private long nativeECKey = 0x0;
+    private static final NativeCrypto nativeCrypto = NativeCrypto.getNativeCrypto();
 
     /**
      * Construct a key from its encoding. Called by the ECKeyFactory.
@@ -212,5 +224,41 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         } catch (InvalidParameterSpecException e) {
             throw new InvalidKeyException("Invalid EC private key", e);
         }
+    }
+
+    @Override
+    public long getNativePtr() {
+        if (nativeECKey != 0x0) {
+            return nativeECKey;
+        }
+
+        ECParameterSpec parameters = this.getParams();
+        ECPoint generator = parameters.getGenerator();
+        EllipticCurve curve = parameters.getCurve();
+        ECField field = curve.getField();
+        byte[] a = curve.getA().toByteArray();
+        byte[] b = curve.getB().toByteArray();
+        byte[] gx = generator.getAffineX().toByteArray();
+        byte[] gy = generator.getAffineY().toByteArray();
+        byte[] n = parameters.getOrder().toByteArray();
+        byte[] h = BigInteger.valueOf(parameters.getCofactor()).toByteArray();
+        byte[] p = new byte[0];
+        if (field instanceof ECFieldFp) {
+            p = ((ECFieldFp)field).getP().toByteArray();
+            nativeECKey = nativeCrypto.ECEncodeGFp(a, a.length, b, b.length, p, p.length, gx, gx.length, gy, gy.length, n, n.length, h, h.length);
+        } else if (field instanceof ECFieldF2m) {
+            p = ((ECFieldF2m)field).getReductionPolynomial().toByteArray();
+            nativeECKey = nativeCrypto.ECEncodeGF2m(a, a.length, b, b.length, p, p.length, gx, gx.length, gy, gy.length, n, n.length, h, h.length);
+        }
+
+        if (!(nativeECKey < 0))  {
+            Cleaner.create(this, new ECCleanerRunnable(nativeECKey));
+            byte[] value = this.getS().toByteArray();
+            if (nativeCrypto.ECCreatePrivateKey(nativeECKey, value, value.length) < 0) {
+                return -1;
+            }
+        }
+
+        return nativeECKey;
     }
 }

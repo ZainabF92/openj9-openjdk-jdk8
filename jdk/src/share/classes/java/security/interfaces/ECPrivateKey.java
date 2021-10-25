@@ -22,10 +22,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * ===========================================================================
+ * (c) Copyright IBM Corp. 2018, 2021 All Rights Reserved
+ * ===========================================================================
+ */
+
 package java.security.interfaces;
 
 import java.math.BigInteger;
 import java.security.PrivateKey;
+
+import jdk.crypto.jniprovider.NativeCrypto;
 
 /**
  * The interface to an elliptic curve (EC) private key.
@@ -45,9 +54,29 @@ public interface ECPrivateKey extends PrivateKey, ECKey {
     */
     static final long serialVersionUID = -7896394956925609184L;
 
+    static final NativeCrypto nativeCrypto = NativeCrypto.getNativeCrypto();
+
     /**
      * Returns the private value S.
      * @return the private value S.
      */
     BigInteger getS();
+
+    /**
+     * Returns the native EC private key context pointer.
+     * @return the native EC private key context pointer or -1 on error.
+     */
+    long getNativePtr();
+
+    static final class ECCleanerRunnable implements Runnable {
+        private final long ECKey;
+
+        public ECCleanerRunnable(long key) {
+            this.ECKey = key;
+        }
+
+        public void run() {
+            nativeCrypto.ECDestroyKey(ECKey);
+        }
+    }
 }
