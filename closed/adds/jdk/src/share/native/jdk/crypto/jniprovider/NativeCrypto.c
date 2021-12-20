@@ -420,6 +420,20 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
         (NULL == OSSL_BN_bin2bn) ||
         (NULL == OSSL_BN_set_negative) ||
         (NULL == OSSL_BN_free) ||
+        (NULL == OSSL_EC_KEY_free) ||
+        (NULL == OSSL_ECDH_compute_key) ||
+        (NULL == OSSL_EC_KEY_get0_public_key) ||
+        (NULL == OSSL_EC_KEY_new) ||
+        (NULL == OSSL_EC_KEY_set_public_key_affine_coordinates) ||
+        (NULL == OSSL_EC_KEY_set_private_key) ||
+        (NULL == OSSL_BN_CTX_new) ||
+        (NULL == OSSL_EC_GROUP_new_curve_GFp) ||
+        (NULL == OSSL_EC_GROUP_new_curve_GF2m) ||
+        (NULL == OSSL_EC_KEY_set_group) ||
+        (NULL == OSSL_EC_POINT_new) ||
+        (NULL == OSSL_EC_POINT_set_affine_coordinates_GFp) ||
+        (NULL == OSSL_EC_POINT_set_affine_coordinates_GF2m) ||
+        (NULL == OSSL_EC_GROUP_set_generator) ||
         ((NULL == OSSL_CRYPTO_num_locks) && (0 == ossl_ver)) ||
         ((NULL == OSSL_CRYPTO_THREADID_set_numeric) && (0 == ossl_ver)) ||
         ((NULL == OSSL_OPENSSL_malloc) && (0 == ossl_ver)) ||
