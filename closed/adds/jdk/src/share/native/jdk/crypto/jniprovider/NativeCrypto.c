@@ -379,6 +379,50 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     OSSL_EC_POINT_set_affine_coordinates_GF2m = (OSSL_EC_POINT_set_affine_coordinates_GF2m_t*)find_crypto_symbol(crypto_library, "EC_POINT_set_affine_coordinates_GF2m");
     OSSL_EC_GROUP_set_generator = (OSSL_EC_GROUP_set_generator_t*)find_crypto_symbol(crypto_library, "EC_GROUP_set_generator");
 
+    if (NULL == OSSL_EC_KEY_free) {
+        printf("OSSL_EC_KEY_free");
+    }
+    if (NULL == OSSL_EC_KEY_get0_public_key) {
+        printf("OSSL_EC_KEY_get0_public_key");
+    }
+    if (NULL == OSSL_EC_KEY_new) {
+        printf("OSSL_EC_KEY_new");
+    }
+    if (NULL == OSSL_EC_KEY_set_private_key) {
+        printf("OSSL_EC_KEY_set_private_key");
+    }
+    if (NULL == OSSL_BN_CTX_new) {
+        printf("OSSL_BN_CTX_new");
+    }
+    if (NULL == OSSL_EC_GROUP_new_curve_GFp) {
+        printf("OSSL_EC_GROUP_new_curve_GFp");
+    }
+    if (NULL == OSSL_EC_GROUP_new_curve_GF2m) {
+        printf("OSSL_EC_GROUP_new_curve_GF2m");
+    }
+    if (NULL == OSSL_EC_KEY_set_group) {
+        printf("OSSL_EC_KEY_set_group");
+    }
+    if (NULL == OSSL_EC_POINT_new) {
+        printf("OSSL_EC_POINT_new");
+    }
+    if (NULL == OSSL_EC_POINT_set_affine_coordinates_GFp) {
+        printf("OSSL_EC_POINT_set_affine_coordinates_GFp");
+    }
+    if (NULL == OSSL_EC_POINT_set_affine_coordinates_GF2m) {
+        printf("OSSL_EC_POINT_set_affine_coordinates_GF2m");
+    }
+    if (NULL == OSSL_EC_GROUP_set_generator) {
+        printf("OSSL_EC_GROUP_set_generator");
+    }
+    if (NULL == OSSL_ECDH_compute_key) {
+        printf("OSSL_ECDH_compute_key");
+    }
+    if (NULL == OSSL_EC_KEY_set_public_key_affine_coordinates) {
+        printf("OSSL_EC_KEY_set_public_key_affine_coordinates");
+    }
+
+
     if ((NULL == OSSL_error_string) ||
         (NULL == OSSL_error_string_n) ||
         (NULL == OSSL_get_error) ||
@@ -420,18 +464,6 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
         (NULL == OSSL_BN_bin2bn) ||
         (NULL == OSSL_BN_set_negative) ||
         (NULL == OSSL_BN_free) ||
-        (NULL == OSSL_EC_KEY_free) ||
-        (NULL == OSSL_EC_KEY_get0_public_key) ||
-        (NULL == OSSL_EC_KEY_new) ||
-        (NULL == OSSL_EC_KEY_set_private_key) ||
-        (NULL == OSSL_BN_CTX_new) ||
-        (NULL == OSSL_EC_GROUP_new_curve_GFp) ||
-        (NULL == OSSL_EC_GROUP_new_curve_GF2m) ||
-        (NULL == OSSL_EC_KEY_set_group) ||
-        (NULL == OSSL_EC_POINT_new) ||
-        (NULL == OSSL_EC_POINT_set_affine_coordinates_GFp) ||
-        (NULL == OSSL_EC_POINT_set_affine_coordinates_GF2m) ||
-        (NULL == OSSL_EC_GROUP_set_generator) ||
         ((NULL == OSSL_CRYPTO_num_locks) && (0 == ossl_ver)) ||
         ((NULL == OSSL_CRYPTO_THREADID_set_numeric) && (0 == ossl_ver)) ||
         ((NULL == OSSL_OPENSSL_malloc) && (0 == ossl_ver)) ||
