@@ -421,10 +421,8 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
         (NULL == OSSL_BN_set_negative) ||
         (NULL == OSSL_BN_free) ||
         (NULL == OSSL_EC_KEY_free) ||
-        (NULL == OSSL_ECDH_compute_key) ||
         (NULL == OSSL_EC_KEY_get0_public_key) ||
         (NULL == OSSL_EC_KEY_new) ||
-        (NULL == OSSL_EC_KEY_set_public_key_affine_coordinates) ||
         (NULL == OSSL_EC_KEY_set_private_key) ||
         (NULL == OSSL_BN_CTX_new) ||
         (NULL == OSSL_EC_GROUP_new_curve_GFp) ||
