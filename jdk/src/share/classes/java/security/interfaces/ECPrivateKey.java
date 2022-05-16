@@ -22,6 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * ===========================================================================
+ * (c) Copyright IBM Corp. 2018, 2022 All Rights Reserved
+ * ===========================================================================
+ */
+
 package java.security.interfaces;
 
 import java.math.BigInteger;
@@ -35,10 +42,11 @@ import java.security.PrivateKey;
  *
  * @see PrivateKey
  * @see ECKey
+ * @see ECNativeKey
  *
  * @since 1.5
  */
-public interface ECPrivateKey extends PrivateKey, ECKey {
+public interface ECPrivateKey extends PrivateKey, ECKey, ECNativeKey {
    /**
     * The class fingerprint that is set to indicate
     * serialization compatibility.
