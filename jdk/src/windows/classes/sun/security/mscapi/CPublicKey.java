@@ -23,6 +23,12 @@
  * questions.
  */
 
+/*
+ * ===========================================================================
+ * (c) Copyright IBM Corp. 2018, 2022 All Rights Reserved
+ * ===========================================================================
+ */
+
 package sun.security.mscapi;
 
 import java.math.BigInteger;
@@ -37,11 +43,16 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
+import java.security.spec.EllipticCurve;
+import java.security.spec.ECField;
+import java.security.spec.ECFieldF2m;
+import java.security.spec.ECFieldFp;
 import java.util.Arrays;
 
 import sun.security.rsa.RSAUtil.KeyType;
 import sun.security.rsa.RSAPublicKeyImpl;
 import sun.security.util.ECKeySizeParameterSpec;
+import sun.misc.Cleaner;
 
 /**
  * The handle for an RSA public key using the Microsoft Crypto API.
@@ -112,6 +123,47 @@ public abstract class CPublicKey extends CKey implements PublicKey {
                     .append("]\n  ECPoint: ").append(getW())
                     .append("\n  params: ").append(getParams());
             return sb.toString();
+        }
+
+        private long nativeECKey = 0x0;
+
+        @Override
+        public long getNativePtr() {
+            if (nativeECKey == 0x0) {
+                synchronized (this) {
+                    if (nativeECKey == 0x0) {
+                        ECParameterSpec parameters = this.getParams();
+                        ECPoint generator = parameters.getGenerator();
+                        EllipticCurve curve = parameters.getCurve();
+                        ECField field = curve.getField();
+                        byte[] a = curve.getA().toByteArray();
+                        byte[] b = curve.getB().toByteArray();
+                        byte[] gx = generator.getAffineX().toByteArray();
+                        byte[] gy = generator.getAffineY().toByteArray();
+                        byte[] n = parameters.getOrder().toByteArray();
+                        byte[] h = BigInteger.valueOf(parameters.getCofactor()).toByteArray();
+                        byte[] p = new byte[0];
+                        int fieldType = 0;
+                        if (field instanceof ECFieldFp) {
+                            p = ((ECFieldFp)field).getP().toByteArray();
+                            nativeECKey = nativeCrypto.ECEncodeGFp(a, a.length, b, b.length, p, p.length, gx, gx.length, gy, gy.length, n, n.length, h, h.length);
+                        } else if (field instanceof ECFieldF2m) {
+                            fieldType = 1;
+                            p = ((ECFieldF2m)field).getReductionPolynomial().toByteArray();
+                            nativeECKey = nativeCrypto.ECEncodeGF2m(a, a.length, b, b.length, p, p.length, gx, gx.length, gy, gy.length, n, n.length, h, h.length);
+                        }
+                        if (!(nativeECKey < 0))  {
+                            Cleaner.create(this, new ECCleanerRunnable(nativeECKey));
+                            byte[] x = this.getW().getAffineX().toByteArray();
+                            byte[] y = this.getW().getAffineY().toByteArray();
+                            if (nativeCrypto.ECCreatePublicKey(nativeECKey, x, x.length, y, y.length, fieldType) < 0) {
+                                nativeECKey = -1;
+                            }
+                        }
+                    }
+                }
+            }
+            return nativeECKey;
         }
     }
 

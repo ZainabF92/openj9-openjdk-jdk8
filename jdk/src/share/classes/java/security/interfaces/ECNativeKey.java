@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,33 +31,32 @@
 
 package java.security.interfaces;
 
-import java.security.PublicKey;
-import java.security.spec.ECPoint;
+import jdk.crypto.jniprovider.NativeCrypto;
 
 /**
- * The interface to an elliptic curve (EC) public key.
+ * The interface to a native elliptic curve (EC) key.
  *
- * @author Valerie Peng
- *
- *
- * @see PublicKey
  * @see ECKey
- * @see ECNativeKey
- * @see java.security.spec.ECPoint
- *
- * @since 1.5
  */
-public interface ECPublicKey extends PublicKey, ECKey, ECNativeKey {
+public interface ECNativeKey extends ECKey {
 
-   /**
-    * The class fingerprint that is set to indicate
-    * serialization compatibility.
-    */
-    static final long serialVersionUID = -3314988629879632826L;
+    static final NativeCrypto nativeCrypto = NativeCrypto.getNativeCrypto();
 
     /**
-     * Returns the public point W.
-     * @return the public point W.
+     * Returns the native EC key context pointer.
+     * @return the native EC key context pointer or -1 on error
      */
-    ECPoint getW();
+    long getNativePtr();
+
+    static final class ECCleanerRunnable implements Runnable {
+        private final long ECKey;
+
+        public ECCleanerRunnable(long key) {
+            this.ECKey = key;
+        }
+
+        public void run() {
+            nativeCrypto.ECDestroyKey(ECKey);
+        }
+    }
 }
