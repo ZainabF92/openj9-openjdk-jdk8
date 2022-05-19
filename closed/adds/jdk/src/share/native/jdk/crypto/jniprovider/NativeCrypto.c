@@ -27,7 +27,6 @@
 #include <openssl/err.h>
 #include <openssl/rsa.h>
 #include <openssl/ecdh.h>
-#include <openssl/crypto.h>
 
 #include <jni.h>
 #include <stdio.h>
@@ -121,7 +120,6 @@ typedef void OSSL_BN_CTX_free_t(BN_CTX *);
 typedef int OSSL_EC_KEY_set_public_key_t(EC_KEY *, const EC_POINT *);
 typedef int OSSL_EC_KEY_check_key_t(const EC_KEY *);
 typedef int EC_set_public_key_t(EC_KEY *, BIGNUM *, BIGNUM *, int);
-typedef void OSSL_cleanse_t(void *, size_t);
 
 typedef int OSSL_CRYPTO_num_locks_t();
 typedef void OSSL_CRYPTO_THREADID_set_numeric_t(CRYPTO_THREADID *id, unsigned long val);
@@ -220,7 +218,6 @@ OSSL_BN_CTX_free_t* OSSL_BN_CTX_free;
 OSSL_EC_KEY_set_public_key_t* OSSL_EC_KEY_set_public_key;
 OSSL_EC_KEY_check_key_t* OSSL_EC_KEY_check_key;
 EC_set_public_key_t* EC_set_public_key;
-OSSL_cleanse_t* OSSL_cleanse;
 
 /* Structure for OpenSSL Digest context */
 typedef struct OpenSSLMDContext {
@@ -426,7 +423,6 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     } else {
         EC_set_public_key = &setECPublicCoordinates;
     }
-    OSSL_cleanse = (OSSL_cleanse_t*)find_crypto_symbol(crypto_library, "OPENSSL_cleanse");
 
     if ((NULL == OSSL_error_string) ||
         (NULL == OSSL_error_string_n) ||
@@ -489,7 +485,6 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
         (NULL == OSSL_BN_CTX_free) ||
         (NULL == OSSL_EC_KEY_set_public_key) ||
         (NULL == OSSL_EC_KEY_check_key) ||
-        (NULL == OSSL_cleanse) ||
         ((NULL == OSSL_CRYPTO_num_locks) && (0 == ossl_ver)) ||
         ((NULL == OSSL_CRYPTO_THREADID_set_numeric) && (0 == ossl_ver)) ||
         ((NULL == OSSL_OPENSSL_malloc) && (0 == ossl_ver)) ||
@@ -2424,39 +2419,28 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECDestroyKey
  *
  * Class:     jdk_crypto_jniprovider_NativeCrypto
  * Method:    ECDeriveKey
- * Signature: (JJJJ[BII)I
+ * Signature: (JJJ[BII)I
  */
 JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECDeriveKey
-  (JNIEnv *env, jclass obj, jlong publicKey, jlong localPublicKey, jlong privateKey, jlong localPrivateKey, jbyteArray secret, jint secretOffset, jint secretLen) {
+  (JNIEnv *env, jclass obj, jlong publicKey, jlong privateKey, jlong localPrivateKey, jbyteArray secret, jint secretOffset, jint secretLen) {
 
-    EC_KEY *srcPublicKey = NULL;
     EC_KEY *srcPrivateKey = NULL;
     EC_KEY *nativePublicKey = NULL;
     EC_KEY *nativePrivateKey = NULL;
     unsigned char* nativeSecret = NULL;
     int ret = 0;
 
-    srcPublicKey = (EC_KEY*)(intptr_t) publicKey;
     srcPrivateKey = (EC_KEY*)(intptr_t) privateKey;
-    nativePublicKey = (EC_KEY*)(intptr_t) localPublicKey;
+    nativePublicKey = (EC_KEY*)(intptr_t) publicKey;
     nativePrivateKey = (EC_KEY*)(intptr_t) localPrivateKey;
 
-    /* create a thread local copy of the public and private keys */
-    nativePublicKey = (*OSSL_EC_KEY_copy)(nativePublicKey, srcPublicKey);
-    if (NULL == nativePublicKey) {
-        return -1;
-    }
-
-    nativePrivateKey = (*OSSL_EC_KEY_copy)(nativePrivateKey, srcPrivateKey);
-    if (NULL == nativePrivateKey) {
-        (*OSSL_cleanse)(nativePublicKey, sizeof(nativePublicKey));
+    if (NULL == (*OSSL_EC_KEY_copy)(nativePrivateKey, srcPrivateKey)) {
         return -1;
     }
 
     nativeSecret = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, secret, 0));
     if (NULL == nativeSecret) {
-        (*OSSL_cleanse)(nativePublicKey, sizeof(nativePublicKey));
-        (*OSSL_cleanse)(nativePrivateKey, sizeof(nativePrivateKey));
+        // clean
         return -1;
     }
 
@@ -2464,8 +2448,7 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECDeriveKey
     ret = (*OSSL_ECDH_compute_key)((nativeSecret + secretOffset), secretLen, (*OSSL_EC_KEY_get0_public_key)(nativePublicKey), nativePrivateKey, NULL);
 
     (*env)->ReleasePrimitiveArrayCritical(env, secret, nativeSecret, 0);
-    (*OSSL_cleanse)(nativePublicKey, sizeof(nativePublicKey));
-    (*OSSL_cleanse)(nativePrivateKey, sizeof(nativePrivateKey));
+    // clean
 
     if (0 == ret) {
         return -1;

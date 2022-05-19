@@ -63,16 +63,7 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
 
     private static final NativeCrypto nativeCrypto = NativeCrypto.getNativeCrypto();
 
-    /* TLS native pointers to the EC public and private keys used to derive the secret key */
-    private static final ThreadLocal<Long> localPublicKey = new ThreadLocal<Long>() {
-        @Override protected Long initialValue() {
-            long ptr = nativeCrypto.ECPreallocateKey();
-            if (ptr < 0) {
-                throw new ProviderException("Could not preallocate native public key");
-            }
-            return ptr;
-        }
-    };
+    /* TLS native pointer to the EC private key used to derive the secret key */
     private static final ThreadLocal<Long> localPrivateKey = new ThreadLocal<Long>() {
         @Override protected Long initialValue() {
             long ptr = nativeCrypto.ECPreallocateKey();
@@ -165,7 +156,7 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
         if ((nativePublicKey < 0) || (nativePrivateKey < 0)) {
             throw new ProviderException("Could not convert keys to native format");
         }
-        int ret = nativeCrypto.ECDeriveKey(nativePublicKey, localPublicKey.get(), nativePrivateKey, localPrivateKey.get(), sharedSecret, offset, secretLen);
+        int ret = nativeCrypto.ECDeriveKey(nativePublicKey, nativePrivateKey, localPrivateKey.get(), sharedSecret, offset, secretLen);
         if (ret < 0) {
             throw new ProviderException("Could not derive key");
         }

@@ -238,7 +238,6 @@ public class NativeCrypto {
     public final native int ECDestroyKey(long key);
 
     public final native int ECDeriveKey(long publicKey,
-                                        long localPublicKey,
                                         long privateKey,
                                         long localPrivateKey,
                                         byte[] secret,
