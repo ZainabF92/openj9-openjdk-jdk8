@@ -233,14 +233,10 @@ public class NativeCrypto {
                                           byte[] h,
                                           int hLen);
 
-    public final native long ECPreallocateKey();
-
     public final native int ECDestroyKey(long key);
 
     public final native int ECDeriveKey(long publicKey,
-                                        long localPublicKey,
                                         long privateKey,
-                                        long localPrivateKey,
                                         byte[] secret,
                                         int secretOffset,
                                         int secretLen);

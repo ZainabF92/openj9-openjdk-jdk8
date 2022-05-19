@@ -45,7 +45,6 @@ SUNWprivate_1.1 {
             Java_jdk_crypto_jniprovider_NativeCrypto_ECCreatePrivateKey;
             Java_jdk_crypto_jniprovider_NativeCrypto_ECEncodeGFp;
             Java_jdk_crypto_jniprovider_NativeCrypto_ECEncodeGF2m;
-            Java_jdk_crypto_jniprovider_NativeCrypto_ECPreallocateKey;
             Java_jdk_crypto_jniprovider_NativeCrypto_ECDestroyKey;
             Java_jdk_crypto_jniprovider_NativeCrypto_ECDeriveKey;
         local:
