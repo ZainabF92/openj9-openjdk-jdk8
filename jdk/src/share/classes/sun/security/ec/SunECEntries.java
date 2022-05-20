@@ -199,7 +199,7 @@ final class SunECEntries {
     static {
         String nativeCryptTrace = GetPropertyAction.privilegedGetProperty("jdk.nativeCryptoTrace");
         String nativeCryptStr   = GetPropertyAction.privilegedGetProperty("jdk.nativeCrypto");
-        String nativeECStr     = GetPropertyAction.privilegedGetProperty("jdk.nativeEC");
+        String nativeECStr      = GetPropertyAction.privilegedGetProperty("jdk.nativeEC");
 
         useNativeCrypto = (nativeCryptStr == null) || Boolean.parseBoolean(nativeCryptStr);
 

@@ -1050,7 +1050,7 @@ abstract class P11Key implements Key, Length {
             return params;
         }
 
-        private long nativeECKey = 0x0;
+        private long nativeECKey;
 
         @Override
         public long getNativePtr() {
@@ -1075,7 +1075,7 @@ abstract class P11Key implements Key, Length {
                             p = ((ECFieldF2m)field).getReductionPolynomial().toByteArray();
                             nativeECKey = nativeCrypto.ECEncodeGF2m(a, a.length, b, b.length, p, p.length, gx, gx.length, gy, gy.length, n, n.length, h, h.length);
                         }
-                        if (!(nativeECKey < 0))  {
+                        if (nativeECKey > 0)  {
                             Cleaner.create(this, new ECCleanerRunnable(nativeECKey));
                             byte[] value = this.getS().toByteArray();
                             if (nativeCrypto.ECCreatePrivateKey(nativeECKey, value, value.length) < 0) {
@@ -1168,7 +1168,7 @@ abstract class P11Key implements Key, Length {
                 + "\n  parameters: " + params;
         }
 
-        private long nativeECKey = 0x0;
+        private long nativeECKey;
 
         @Override
         public long getNativePtr() {
@@ -1195,7 +1195,7 @@ abstract class P11Key implements Key, Length {
                             p = ((ECFieldF2m)field).getReductionPolynomial().toByteArray();
                             nativeECKey = nativeCrypto.ECEncodeGF2m(a, a.length, b, b.length, p, p.length, gx, gx.length, gy, gy.length, n, n.length, h, h.length);
                         }
-                        if (!(nativeECKey < 0))  {
+                        if (nativeECKey > 0)  {
                             Cleaner.create(this, new ECCleanerRunnable(nativeECKey));
                             byte[] x = this.getW().getAffineX().toByteArray();
                             byte[] y = this.getW().getAffineY().toByteArray();

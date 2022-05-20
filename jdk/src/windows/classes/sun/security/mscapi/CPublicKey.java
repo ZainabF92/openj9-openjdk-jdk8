@@ -125,7 +125,7 @@ public abstract class CPublicKey extends CKey implements PublicKey {
             return sb.toString();
         }
 
-        private long nativeECKey = 0x0;
+        private long nativeECKey;
 
         @Override
         public long getNativePtr() {
@@ -152,7 +152,7 @@ public abstract class CPublicKey extends CKey implements PublicKey {
                             p = ((ECFieldF2m)field).getReductionPolynomial().toByteArray();
                             nativeECKey = nativeCrypto.ECEncodeGF2m(a, a.length, b, b.length, p, p.length, gx, gx.length, gy, gy.length, n, n.length, h, h.length);
                         }
-                        if (!(nativeECKey < 0))  {
+                        if (nativeECKey > 0)  {
                             Cleaner.create(this, new ECCleanerRunnable(nativeECKey));
                             byte[] x = this.getW().getAffineX().toByteArray();
                             byte[] y = this.getW().getAffineY().toByteArray();

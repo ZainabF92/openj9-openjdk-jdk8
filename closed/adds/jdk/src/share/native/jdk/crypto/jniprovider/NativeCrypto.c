@@ -101,10 +101,10 @@ typedef void OSSL_BN_free_t (BIGNUM *);
 typedef void OSSL_EC_KEY_free_t(EC_KEY *);
 typedef int OSSL_ECDH_compute_key_t(void *, size_t, const EC_POINT *, EC_KEY *, void *(*KDF)(const void *, size_t, void *, size_t *));
 typedef const EC_POINT* OSSL_EC_KEY_get0_public_key_t(const EC_KEY *);
-typedef EC_KEY* OSSL_EC_KEY_new_t();
+typedef EC_KEY* OSSL_EC_KEY_new_t(void);
 typedef int OSSL_EC_KEY_set_public_key_affine_coordinates_t(EC_KEY *, BIGNUM *, BIGNUM *);
 typedef int OSSL_EC_KEY_set_private_key_t(EC_KEY *, const BIGNUM *);
-typedef BN_CTX* OSSL_BN_CTX_new_t();
+typedef BN_CTX* OSSL_BN_CTX_new_t(void);
 typedef EC_GROUP* OSSL_EC_GROUP_new_curve_GFp_t(const BIGNUM *, const BIGNUM *, const BIGNUM *, BN_CTX *);
 typedef EC_GROUP* OSSL_EC_GROUP_new_curve_GF2m_t(const BIGNUM *, const BIGNUM *, const BIGNUM *, BN_CTX *);
 typedef int OSSL_EC_KEY_set_group_t(EC_KEY *, const EC_GROUP *);
@@ -393,7 +393,7 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     OSSL_BN_set_negative = (OSSL_BN_set_negative_t *)find_crypto_symbol(crypto_library, "BN_set_negative");
     OSSL_BN_free = (OSSL_BN_free_t *)find_crypto_symbol(crypto_library, "BN_free");
 
-    /* Load the functions symbols for Openssl EC algorithm. */
+    /* Load the functions symbols for OpenSSL EC algorithm. */
     OSSL_EC_KEY_free = (OSSL_EC_KEY_free_t*)find_crypto_symbol(crypto_library, "EC_KEY_free");
     OSSL_ECDH_compute_key = (OSSL_ECDH_compute_key_t*)find_crypto_symbol(crypto_library, "ECDH_compute_key");
     OSSL_EC_KEY_get0_public_key = (OSSL_EC_KEY_get0_public_key_t*)find_crypto_symbol(crypto_library, "EC_KEY_get0_public_key");
@@ -1958,17 +1958,16 @@ int OSSL102_RSA_set0_crt_params(RSA *r2, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqm
  * Method:    ECCreatePublicKey
  * Signature: (J[BI[BII)I
  */
-JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECCreatePublicKey
-  (JNIEnv *env, jclass obj, jlong key, jbyteArray x, jint xLen, jbyteArray y, jint yLen, jint field) {
-
+JNIEXPORT jint JNICALL
+Java_jdk_crypto_jniprovider_NativeCrypto_ECCreatePublicKey
+  (JNIEnv *env, jclass obj, jlong key, jbyteArray x, jint xLen, jbyteArray y, jint yLen, jint field)
+{
     unsigned char *nativeX = NULL;
     unsigned char *nativeY = NULL;
-    EC_KEY *publicKey = NULL;
+    EC_KEY *publicKey = (EC_KEY*)(intptr_t) key;
     BIGNUM *xBN = NULL;
     BIGNUM *yBN = NULL;
     int ret = 0;
-
-    publicKey = (EC_KEY*)(intptr_t) key;
 
     nativeX = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, x, 0));
     if (NULL == nativeX) {
@@ -2008,15 +2007,14 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECCreatePublicKe
  * Method:    ECCreatePrivateKey
  * Signature: (J[BI)I
  */
-JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECCreatePrivateKey
-  (JNIEnv *env, jclass obj, jlong key, jbyteArray s, jint sLen) {
-
+JNIEXPORT jint JNICALL
+Java_jdk_crypto_jniprovider_NativeCrypto_ECCreatePrivateKey
+  (JNIEnv *env, jclass obj, jlong key, jbyteArray s, jint sLen)
+{
     unsigned char *nativeS = NULL;
-    EC_KEY *privateKey = NULL;
+    EC_KEY *privateKey = (EC_KEY*)(intptr_t) key;
     BIGNUM *sBN = NULL;
     int ret = 0;
-
-    privateKey = (EC_KEY*)(intptr_t) key;
 
     nativeS = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, s, 0));
     if (NULL == nativeS) {
@@ -2047,9 +2045,10 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECCreatePrivateK
  * Method:    ECEncodeGFp
  * Signature: ([BI[BI[BI[BI[BI[BI[BI)J
  */
-JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECEncodeGFp
-  (JNIEnv *env, jclass obj, jbyteArray a, jint aLen, jbyteArray b, jint bLen, jbyteArray p, jint pLen, jbyteArray x, jint xLen, jbyteArray y, jint yLen, jbyteArray n, jint nLen, jbyteArray h, jint hLen) {
-
+JNIEXPORT jlong JNICALL
+Java_jdk_crypto_jniprovider_NativeCrypto_ECEncodeGFp
+  (JNIEnv *env, jclass obj, jbyteArray a, jint aLen, jbyteArray b, jint bLen, jbyteArray p, jint pLen, jbyteArray x, jint xLen, jbyteArray y, jint yLen, jbyteArray n, jint nLen, jbyteArray h, jint hLen)
+{
     EC_KEY *key = NULL;
     unsigned char *nativeA = NULL;
     unsigned char *nativeB = NULL;
@@ -2215,9 +2214,10 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECEncodeGFp
  * Method:    ECEncodeGF2m
  * Signature: ([BI[BI[BI[BI[BI[BI[BI)J
  */
-JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECEncodeGF2m
-  (JNIEnv *env, jclass obj, jbyteArray a, jint aLen, jbyteArray b, jint bLen, jbyteArray p, jint pLen, jbyteArray x, jint xLen, jbyteArray y, jint yLen, jbyteArray n, jint nLen, jbyteArray h, jint hLen) {
-
+JNIEXPORT jlong JNICALL
+Java_jdk_crypto_jniprovider_NativeCrypto_ECEncodeGF2m
+  (JNIEnv *env, jclass obj, jbyteArray a, jint aLen, jbyteArray b, jint bLen, jbyteArray p, jint pLen, jbyteArray x, jint xLen, jbyteArray y, jint yLen, jbyteArray n, jint nLen, jbyteArray h, jint hLen)
+{
     EC_KEY *key = NULL;
     unsigned char *nativeA = NULL;
     unsigned char *nativeB = NULL;
@@ -2383,9 +2383,10 @@ JNIEXPORT jlong JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECEncodeGF2m
  * Method:    ECDestroyKey
  * Signature: (J)I
  */
-JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECDestroyKey
-  (JNIEnv *env, jclass obj, jlong key) {
-
+JNIEXPORT jint JNICALL
+Java_jdk_crypto_jniprovider_NativeCrypto_ECDestroyKey
+  (JNIEnv *env, jclass obj, jlong key)
+{
     EC_KEY *nativeKey = (EC_KEY*)(intptr_t) key;
     if (NULL == nativeKey) {
         return -1;
@@ -2401,16 +2402,14 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECDestroyKey
  * Method:    ECDeriveKey
  * Signature: (JJ[BII)I
  */
-JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_ECDeriveKey
-  (JNIEnv *env, jclass obj, jlong publicKey, jlong privateKey, jbyteArray secret, jint secretOffset, jint secretLen) {
-
-    EC_KEY *nativePublicKey = NULL;
-    EC_KEY *nativePrivateKey = NULL;
+JNIEXPORT jint JNICALL
+Java_jdk_crypto_jniprovider_NativeCrypto_ECDeriveKey
+  (JNIEnv *env, jclass obj, jlong publicKey, jlong privateKey, jbyteArray secret, jint secretOffset, jint secretLen)
+{
+    EC_KEY *nativePublicKey = (EC_KEY*)(intptr_t) publicKey;
+    EC_KEY *nativePrivateKey = (EC_KEY*)(intptr_t) privateKey;
     unsigned char* nativeSecret = NULL;
     int ret = 0;
-
-    nativePublicKey = (EC_KEY*)(intptr_t) publicKey;
-    nativePrivateKey = (EC_KEY*)(intptr_t) privateKey;
 
     nativeSecret = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, secret, 0));
     if (NULL == nativeSecret) {

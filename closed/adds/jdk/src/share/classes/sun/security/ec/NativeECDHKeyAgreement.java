@@ -25,7 +25,7 @@
 
 /*
  * ===========================================================================
- * (c) Copyright IBM Corp. 2018, 2022 All Rights Reserved
+ * (c) Copyright IBM Corp. 2022, 2022 All Rights Reserved
  * ===========================================================================
  */
 
@@ -76,14 +76,13 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
             throw new InvalidKeyException
                         ("Key must be instance of PrivateKey");
         }
-        privateKey = (ECPrivateKey) ECKeyFactory.toECKey(key);
-        publicKey = null;
+        this.privateKey = (ECPrivateKey) ECKeyFactory.toECKey(key);
+        this.publicKey = null;
     }
 
     @Override
-    protected void engineInit(Key key, AlgorithmParameterSpec params,
-            SecureRandom random) throws InvalidKeyException,
-            InvalidAlgorithmParameterException {
+    protected void engineInit(Key key, AlgorithmParameterSpec params, SecureRandom random)
+            throws InvalidKeyException, InvalidAlgorithmParameterException {
         if (params != null) {
             throw new InvalidAlgorithmParameterException
                         ("Parameters not supported");
@@ -94,10 +93,10 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
     @Override
     protected Key engineDoPhase(Key key, boolean lastPhase)
             throws InvalidKeyException, IllegalStateException {
-        if (privateKey == null) {
+        if (this.privateKey == null) {
             throw new IllegalStateException("Not initialized");
         }
-        if (publicKey != null) {
+        if (this.publicKey != null) {
             throw new IllegalStateException("Phase already executed");
         }
         if (!lastPhase) {
@@ -111,16 +110,16 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
 
         this.publicKey = (ECPublicKey) key;
 
-        ECParameterSpec params = publicKey.getParams();
+        ECParameterSpec params = this.publicKey.getParams();
         int keyLenBits = params.getCurve().getField().getFieldSize();
-        secretLen = (keyLenBits + 7) >> 3;
+        this.secretLen = (keyLenBits + 7) >> 3;
 
         return null;
     }
 
     @Override
     protected byte[] engineGenerateSecret() throws IllegalStateException {
-        byte[] secret = new byte[secretLen];
+        byte[] secret = new byte[this.secretLen];
         try {
             engineGenerateSecret(secret, 0);
         } catch (ShortBufferException e) {
@@ -130,29 +129,29 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
     }
 
     @Override
-    protected int engineGenerateSecret(byte[] sharedSecret, int
-            offset) throws IllegalStateException, ShortBufferException {
-        if ((offset + secretLen) > sharedSecret.length) {
-            throw new ShortBufferException("Need " + secretLen
+    protected int engineGenerateSecret(byte[] sharedSecret, int offset)
+            throws IllegalStateException, ShortBufferException {
+        if ((offset + this.secretLen) > sharedSecret.length) {
+            throw new ShortBufferException("Need " + this.secretLen
                 + " bytes, only " + (sharedSecret.length - offset)
                 + " available");
         }
-        if ((privateKey == null) || (publicKey == null)) {
+        if ((this.privateKey == null) || (this.publicKey == null)) {
             throw new IllegalStateException("Not initialized correctly");
         }
-        long nativePublicKey = publicKey.getNativePtr();
-        long nativePrivateKey = privateKey.getNativePtr();
+        long nativePublicKey = this.publicKey.getNativePtr();
+        long nativePrivateKey = this.privateKey.getNativePtr();
         if ((nativePublicKey < 0) || (nativePrivateKey < 0)) {
             throw new ProviderException("Could not convert keys to native format");
         }
         int ret;
-        synchronized (privateKey) {
-            ret = nativeCrypto.ECDeriveKey(nativePublicKey, nativePrivateKey, sharedSecret, offset, secretLen);
+        synchronized (this.privateKey) {
+            ret = nativeCrypto.ECDeriveKey(nativePublicKey, nativePrivateKey, sharedSecret, offset, this.secretLen);
         }
         if (ret < 0) {
             throw new ProviderException("Could not derive key");
         }
-        return secretLen;
+        return this.secretLen;
     }
 
     @Override

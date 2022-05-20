@@ -79,7 +79,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     private BigInteger s;       // private value
     private byte[] arrayS;      // private value as a little-endian array
     private ECParameterSpec params;
-    private long nativeECKey = 0x0;
+    private long nativeECKey;
 
     /**
      * Construct a key from its encoding. Called by the ECKeyFactory.
@@ -246,7 +246,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
                         p = ((ECFieldF2m)field).getReductionPolynomial().toByteArray();
                         nativeECKey = nativeCrypto.ECEncodeGF2m(a, a.length, b, b.length, p, p.length, gx, gx.length, gy, gy.length, n, n.length, h, h.length);
                     }
-                    if (!(nativeECKey < 0))  {
+                    if (nativeECKey > 0)  {
                         Cleaner.create(this, new ECCleanerRunnable(nativeECKey));
                         byte[] value = this.getS().toByteArray();
                         if (nativeCrypto.ECCreatePrivateKey(nativeECKey, value, value.length) < 0) {
