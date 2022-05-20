@@ -139,17 +139,21 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
         if ((this.privateKey == null) || (this.publicKey == null)) {
             throw new IllegalStateException("Not initialized correctly");
         }
-        long nativePublicKey = this.publicKey.getNativePtr();
-        long nativePrivateKey = this.privateKey.getNativePtr();
-        if ((nativePublicKey < 0) || (nativePrivateKey < 0)) {
-            throw new ProviderException("Could not convert keys to native format");
-        }
-        int ret;
-        synchronized (this.privateKey) {
-            ret = nativeCrypto.ECDeriveKey(nativePublicKey, nativePrivateKey, sharedSecret, offset, this.secretLen);
-        }
-        if (ret < 0) {
-            throw new ProviderException("Could not derive key");
+        if ((this.publicKey instanceof ECPublicKeyImpl) && (this.privateKey instanceof ECPrivateKeyImpl)) {
+            long nativePublicKey = ((ECPublicKeyImpl) this.publicKey).getNativePtr();
+            long nativePrivateKey = ((ECPrivateKeyImpl) this.privateKey).getNativePtr();
+            if ((nativePublicKey < 0) || (nativePrivateKey < 0)) {
+                throw new ProviderException("Could not convert keys to native format");
+            }
+            int ret;
+            synchronized (this.privateKey) {
+                ret = nativeCrypto.ECDeriveKey(nativePublicKey, nativePrivateKey, sharedSecret, offset, this.secretLen);
+            }
+            if (ret < 0) {
+                throw new ProviderException("Could not derive key");
+            }
+        } else {
+            throw new ProviderException("Key type not supported");
         }
         return this.secretLen;
     }
@@ -167,5 +171,4 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
         }
         return new SecretKeySpec(engineGenerateSecret(), "TlsPremasterSecret");
     }
-
 }

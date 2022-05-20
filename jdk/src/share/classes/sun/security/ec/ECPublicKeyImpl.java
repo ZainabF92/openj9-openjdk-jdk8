@@ -38,6 +38,8 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 
+import jdk.crypto.jniprovider.NativeCrypto;
+
 import sun.security.util.ECParameters;
 import sun.security.util.ECUtil;
 
@@ -58,6 +60,8 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
     private ECPoint w;
     private ECParameterSpec params;
     private long nativeECKey;
+
+    private static final NativeCrypto nativeCrypto = NativeCrypto.getNativeCrypto();
 
     /**
      * Construct a key from its components. Used by the
@@ -139,8 +143,11 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
                         getEncoded());
     }
 
-    @Override
-    public long getNativePtr() {
+    /**
+     * Returns the native EC public key context pointer.
+     * @return the native EC public key context pointer or -1 on error
+     */
+    long getNativePtr() {
         if (nativeECKey == 0x0) {
             synchronized (this) {
                 if (nativeECKey == 0x0) {
@@ -176,5 +183,17 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
             }
         }
         return nativeECKey;
+    }
+
+    static final class ECCleanerRunnable implements Runnable {
+        private final long ECKey;
+    
+        public ECCleanerRunnable(long key) {
+            this.ECKey = key;
+        }
+    
+        public void run() {
+            nativeCrypto.ECDestroyKey(ECKey);
+        }
     }
 }

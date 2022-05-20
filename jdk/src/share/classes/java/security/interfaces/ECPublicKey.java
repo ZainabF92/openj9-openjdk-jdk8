@@ -22,13 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-/*
- * ===========================================================================
- * (c) Copyright IBM Corp. 2018, 2022 All Rights Reserved
- * ===========================================================================
- */
-
 package java.security.interfaces;
 
 import java.security.PublicKey;
@@ -42,12 +35,11 @@ import java.security.spec.ECPoint;
  *
  * @see PublicKey
  * @see ECKey
- * @see ECNativeKey
  * @see java.security.spec.ECPoint
  *
  * @since 1.5
  */
-public interface ECPublicKey extends PublicKey, ECKey, ECNativeKey {
+public interface ECPublicKey extends PublicKey, ECKey {
 
    /**
     * The class fingerprint that is set to indicate

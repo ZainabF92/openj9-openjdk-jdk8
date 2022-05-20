@@ -38,6 +38,8 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 
+import jdk.crypto.jniprovider.NativeCrypto;
+
 import sun.security.util.ArrayUtil;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerOutputStream;
@@ -80,6 +82,8 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     private byte[] arrayS;      // private value as a little-endian array
     private ECParameterSpec params;
     private long nativeECKey;
+
+    private static final NativeCrypto nativeCrypto = NativeCrypto.getNativeCrypto();
 
     /**
      * Construct a key from its encoding. Called by the ECKeyFactory.
@@ -223,8 +227,11 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         }
     }
 
-    @Override
-    public long getNativePtr() {
+    /**
+     * Returns the native EC public key context pointer.
+     * @return the native EC public key context pointer or -1 on error
+     */
+    long getNativePtr() {
         if (nativeECKey == 0x0) {
             synchronized (this) {
                 if (nativeECKey == 0x0) {
@@ -257,5 +264,17 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             }
         }
         return nativeECKey;
+    }
+
+    static final class ECCleanerRunnable implements Runnable {
+        private final long ECKey;
+    
+        public ECCleanerRunnable(long key) {
+            this.ECKey = key;
+        }
+    
+        public void run() {
+            nativeCrypto.ECDestroyKey(ECKey);
+        }
     }
 }
