@@ -25,7 +25,7 @@
 
 /*
  * ===========================================================================
- * (c) Copyright IBM Corp. 2018, 2022 All Rights Reserved
+ * (c) Copyright IBM Corp. 2022, 2022 All Rights Reserved
  * ===========================================================================
  */
 
@@ -45,8 +45,6 @@ import sun.security.util.ECUtil;
 
 import sun.security.x509.*;
 
-import sun.misc.Cleaner;
-
 /**
  * Key implementation for EC public keys.
  *
@@ -56,12 +54,11 @@ import sun.misc.Cleaner;
 public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
 
     private static final long serialVersionUID = -2462037275160462289L;
+    private static final NativeCrypto nativeCrypto = NativeCrypto.getNativeCrypto();
 
     private ECPoint w;
     private ECParameterSpec params;
     private long nativeECKey;
-
-    private static final NativeCrypto nativeCrypto = NativeCrypto.getNativeCrypto();
 
     /**
      * Construct a key from its components. Used by the
@@ -172,7 +169,7 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
                         nativeECKey = nativeCrypto.ECEncodeGF2m(a, a.length, b, b.length, p, p.length, gx, gx.length, gy, gy.length, n, n.length, h, h.length);
                     }
                     if (nativeECKey > 0)  {
-                        Cleaner.create(this, new ECCleanerRunnable(nativeECKey));
+                        nativeCrypto.createECKeyCleaner(this, nativeECKey);
                         byte[] x = this.getW().getAffineX().toByteArray();
                         byte[] y = this.getW().getAffineY().toByteArray();
                         if (nativeCrypto.ECCreatePublicKey(nativeECKey, x, x.length, y, y.length, fieldType) < 0) {
@@ -183,17 +180,5 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
             }
         }
         return nativeECKey;
-    }
-
-    static final class ECCleanerRunnable implements Runnable {
-        private final long ECKey;
-    
-        public ECCleanerRunnable(long key) {
-            this.ECKey = key;
-        }
-    
-        public void run() {
-            nativeCrypto.ECDestroyKey(ECKey);
-        }
     }
 }

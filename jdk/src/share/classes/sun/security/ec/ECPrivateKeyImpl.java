@@ -25,7 +25,7 @@
 
 /*
  * ===========================================================================
- * (c) Copyright IBM Corp. 2018, 2022 All Rights Reserved
+ * (c) Copyright IBM Corp. 2022, 2022 All Rights Reserved
  * ===========================================================================
  */
 
@@ -48,8 +48,6 @@ import sun.security.util.ECParameters;
 import sun.security.util.ECUtil;
 import sun.security.x509.AlgorithmId;
 import sun.security.pkcs.PKCS8Key;
-
-import sun.misc.Cleaner;
 
 /**
  * Key implementation for EC private keys.
@@ -77,13 +75,12 @@ import sun.misc.Cleaner;
 public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
 
     private static final long serialVersionUID = 88695385615075129L;
+    private static final NativeCrypto nativeCrypto = NativeCrypto.getNativeCrypto();
 
     private BigInteger s;       // private value
     private byte[] arrayS;      // private value as a little-endian array
     private ECParameterSpec params;
     private long nativeECKey;
-
-    private static final NativeCrypto nativeCrypto = NativeCrypto.getNativeCrypto();
 
     /**
      * Construct a key from its encoding. Called by the ECKeyFactory.
@@ -254,7 +251,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
                         nativeECKey = nativeCrypto.ECEncodeGF2m(a, a.length, b, b.length, p, p.length, gx, gx.length, gy, gy.length, n, n.length, h, h.length);
                     }
                     if (nativeECKey > 0)  {
-                        Cleaner.create(this, new ECCleanerRunnable(nativeECKey));
+                        nativeCrypto.createECKeyCleaner(this, nativeECKey);
                         byte[] value = this.getS().toByteArray();
                         if (nativeCrypto.ECCreatePrivateKey(nativeECKey, value, value.length) < 0) {
                             nativeECKey = -1;
@@ -264,17 +261,5 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             }
         }
         return nativeECKey;
-    }
-
-    static final class ECCleanerRunnable implements Runnable {
-        private final long ECKey;
-    
-        public ECCleanerRunnable(long key) {
-            this.ECKey = key;
-        }
-    
-        public void run() {
-            nativeCrypto.ECDestroyKey(ECKey);
-        }
     }
 }

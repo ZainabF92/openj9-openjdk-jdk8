@@ -374,7 +374,7 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     OSSL_DecryptUpdate = (OSSL_DecryptUpdate_t*)find_crypto_symbol(crypto_library, "EVP_DecryptUpdate");
     OSSL_DecryptFinal = (OSSL_DecryptFinal_t*)find_crypto_symbol(crypto_library, "EVP_DecryptFinal");
 
-    /* Load the functions symbols for Openssl RSA algorithm. */
+    /* Load the functions symbols for OpenSSL RSA algorithm. */
     OSSL_RSA_new = (OSSL_RSA_new_t*)find_crypto_symbol(crypto_library, "RSA_new");
 
     if (1 == ossl_ver) {
@@ -2425,7 +2425,7 @@ Java_jdk_crypto_jniprovider_NativeCrypto_ECDeriveKey
         return -1;
     }
 
-    return (jint)secretLen;
+    return secretLen;
 }
 
 /** Wrapper for OSSL_EC_KEY_set_public_key_affine_coordinates
@@ -2439,13 +2439,11 @@ int setECPublicCoordinates(EC_KEY *key, BIGNUM *x, BIGNUM *y, int field) {
  *  Returns 1 on success and 0 otherwise.
  */
 int setECPublicKey(EC_KEY *key, BIGNUM *x, BIGNUM *y, int field) {
-    BN_CTX *ctx = NULL;
-    EC_POINT *publicKey = NULL;
     const EC_GROUP *group = (*OSSL_EC_KEY_get0_group)(key);
+    BN_CTX *ctx = (*OSSL_BN_CTX_new)();
+    EC_POINT *publicKey = (*OSSL_EC_POINT_new)(group);
     int ret = 0;
 
-    ctx = (*OSSL_BN_CTX_new)();
-    publicKey = (*OSSL_EC_POINT_new)(group);
     if ((NULL == ctx) || (NULL == group) || (NULL == publicKey)) {
         (*OSSL_BN_CTX_free)(ctx);
         (*OSSL_EC_POINT_free)(publicKey);

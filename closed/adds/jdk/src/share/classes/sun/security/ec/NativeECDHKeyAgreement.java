@@ -38,8 +38,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.ProviderException;
 import java.security.SecureRandom;
-import java.security.interfaces.ECPrivateKey;
-import java.security.interfaces.ECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 
@@ -53,10 +51,10 @@ import jdk.crypto.jniprovider.NativeCrypto;
 public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
 
     /* private key, if initialized */
-    private ECPrivateKey privateKey;
+    private ECPrivateKeyImpl privateKey;
 
     /* public key, non-null between doPhase() & generateSecret() only */
-    private ECPublicKey publicKey;
+    private ECPublicKeyImpl publicKey;
 
     /* length of the secret to be derived */
     private int secretLen;
@@ -76,7 +74,7 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
             throw new InvalidKeyException
                         ("Key must be instance of PrivateKey");
         }
-        this.privateKey = (ECPrivateKey) ECKeyFactory.toECKey(key);
+        this.privateKey = (ECPrivateKeyImpl) ECKeyFactory.toECKey(key);
         this.publicKey = null;
     }
 
@@ -108,7 +106,7 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
                 ("Key must be a PublicKey with algorithm EC");
         }
 
-        this.publicKey = (ECPublicKey) key;
+        this.publicKey = (ECPublicKeyImpl) key;
 
         ECParameterSpec params = this.publicKey.getParams();
         int keyLenBits = params.getCurve().getField().getFieldSize();
@@ -139,21 +137,17 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
         if ((this.privateKey == null) || (this.publicKey == null)) {
             throw new IllegalStateException("Not initialized correctly");
         }
-        if ((this.publicKey instanceof ECPublicKeyImpl) && (this.privateKey instanceof ECPrivateKeyImpl)) {
-            long nativePublicKey = ((ECPublicKeyImpl) this.publicKey).getNativePtr();
-            long nativePrivateKey = ((ECPrivateKeyImpl) this.privateKey).getNativePtr();
-            if ((nativePublicKey < 0) || (nativePrivateKey < 0)) {
-                throw new ProviderException("Could not convert keys to native format");
-            }
-            int ret;
-            synchronized (this.privateKey) {
-                ret = nativeCrypto.ECDeriveKey(nativePublicKey, nativePrivateKey, sharedSecret, offset, this.secretLen);
-            }
-            if (ret < 0) {
-                throw new ProviderException("Could not derive key");
-            }
-        } else {
-            throw new ProviderException("Key type not supported");
+        long nativePublicKey = this.publicKey.getNativePtr();
+        long nativePrivateKey = this.privateKey.getNativePtr();
+        if ((nativePublicKey < 0) || (nativePrivateKey < 0)) {
+            throw new ProviderException("Could not convert keys to native format");
+        }
+        int ret;
+        synchronized (this.privateKey) {
+            ret = nativeCrypto.ECDeriveKey(nativePublicKey, nativePrivateKey, sharedSecret, offset, this.secretLen);
+        }
+        if (ret < 0) {
+            throw new ProviderException("Could not derive key");
         }
         return this.secretLen;
     }

@@ -28,6 +28,7 @@ import java.security.*;
 
 import com.ibm.oti.vm.VM;
 
+import sun.misc.Cleaner;
 import sun.misc.Unsafe;
 import sun.reflect.Reflection;
 import sun.reflect.CallerSensitive;
@@ -77,6 +78,15 @@ public class NativeCrypto {
             throw new SecurityException("NativeCrypto");
         }
         return new NativeCrypto();
+    }
+
+    public void createECKeyCleaner(Object owner, long key) {
+        Cleaner.create(owner, new Runnable() {
+            @Override
+            public void run() {
+                NativeCrypto.this.ECDestroyKey(key);
+            }
+        });
     }
 
     /* Native digest interfaces */
