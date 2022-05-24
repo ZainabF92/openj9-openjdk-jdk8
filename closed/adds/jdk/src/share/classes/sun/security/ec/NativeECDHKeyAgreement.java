@@ -101,9 +101,9 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
             throw new IllegalStateException
                 ("Only two party agreement supported, lastPhase must be true");
         }
-        if (!(key instanceof ECPublicKey)) {
+        if (!(key instanceof ECPublicKeyImpl)) {
             throw new InvalidKeyException
-                ("Key must be a PublicKey with algorithm EC");
+                ("Key must be a ECPublicKeyImpl");
         }
 
         this.publicKey = (ECPublicKeyImpl) key;

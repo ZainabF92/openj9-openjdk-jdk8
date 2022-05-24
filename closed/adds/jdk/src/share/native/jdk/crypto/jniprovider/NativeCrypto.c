@@ -2430,7 +2430,9 @@ Java_jdk_crypto_jniprovider_NativeCrypto_ECDeriveKey
 
 /** Wrapper for OSSL_EC_KEY_set_public_key_affine_coordinates
  */
-int setECPublicCoordinates(EC_KEY *key, BIGNUM *x, BIGNUM *y, int field) {
+int
+setECPublicCoordinates(EC_KEY *key, BIGNUM *x, BIGNUM *y, int field)
+{
     return (*OSSL_EC_KEY_set_public_key_affine_coordinates)(key, x, y);
 }
 
@@ -2438,7 +2440,9 @@ int setECPublicCoordinates(EC_KEY *key, BIGNUM *x, BIGNUM *y, int field) {
  *  Field is 0 for Fp and 1 for F2m.
  *  Returns 1 on success and 0 otherwise.
  */
-int setECPublicKey(EC_KEY *key, BIGNUM *x, BIGNUM *y, int field) {
+int
+setECPublicKey(EC_KEY *key, BIGNUM *x, BIGNUM *y, int field)
+{
     const EC_GROUP *group = (*OSSL_EC_KEY_get0_group)(key);
     BN_CTX *ctx = (*OSSL_BN_CTX_new)();
     EC_POINT *publicKey = (*OSSL_EC_POINT_new)(group);
