@@ -37,6 +37,7 @@ import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.ProviderException;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
@@ -72,8 +73,9 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
             throws InvalidKeyException {
         if (!(key instanceof PrivateKey)) {
             throw new InvalidKeyException
-                        ("Key must be instance of PrivateKey");
+                ("Key must be an instance of PrivateKey");
         }
+        // attempt to translate the key if it is not an ECKey
         this.privateKey = (ECPrivateKeyImpl) ECKeyFactory.toECKey(key);
         this.publicKey = null;
     }
@@ -101,12 +103,12 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
             throw new IllegalStateException
                 ("Only two party agreement supported, lastPhase must be true");
         }
-        if (!(key instanceof ECPublicKeyImpl)) {
+        if (!(key instanceof PublicKey)) {
             throw new InvalidKeyException
-                ("Key must be a ECPublicKeyImpl");
+                ("Key must be an instance of PublicKey");
         }
-
-        this.publicKey = (ECPublicKeyImpl) key;
+        // attempt to translate the key if it is not an ECKey
+        this.publicKey = (ECPublicKeyImpl) ECKeyFactory.toECKey(key);
 
         ECParameterSpec params = this.publicKey.getParams();
         int keyLenBits = params.getCurve().getField().getFieldSize();
