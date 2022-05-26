@@ -480,6 +480,8 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     }
     if (NULL == OSSL_EC_KEY_check_key) {
         printf("OSSL_EC_KEY_check_key");
+    } else {
+        printf("reached end");
     }
 
     if ((NULL == OSSL_error_string) ||
