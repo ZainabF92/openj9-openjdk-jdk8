@@ -225,6 +225,14 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     }
 
     /**
+     * Returns true if this key's EC field is an instance of ECFieldF2m.
+     * @return true if the field is an instance of ECFieldF2m, false otherwise
+     */
+    boolean isECFieldF2m() {
+        return (this.getParams().getCurve().getField() instanceof ECFieldF2m);
+    }
+
+    /**
      * Returns the native EC public key context pointer.
      * @return the native EC public key context pointer or -1 on error
      */
@@ -250,10 +258,10 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
                         p = ((ECFieldF2m)field).getReductionPolynomial().toByteArray();
                         nativeECKey = nativeCrypto.ECEncodeGF2m(a, a.length, b, b.length, p, p.length, gx, gx.length, gy, gy.length, n, n.length, h, h.length);
                     }
-                    if (nativeECKey > 0)  {
+                    if (nativeECKey != -1) {
                         nativeCrypto.createECKeyCleaner(this, nativeECKey);
                         byte[] value = this.getS().toByteArray();
-                        if (nativeCrypto.ECCreatePrivateKey(nativeECKey, value, value.length) < 0) {
+                        if (nativeCrypto.ECCreatePrivateKey(nativeECKey, value, value.length) == -1) {
                             nativeECKey = -1;
                         }
                     }

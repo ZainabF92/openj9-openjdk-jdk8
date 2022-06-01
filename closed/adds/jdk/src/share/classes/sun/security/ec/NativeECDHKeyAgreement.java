@@ -31,6 +31,7 @@
 
 package sun.security.ec;
 
+import java.lang.reflect.Method;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -49,7 +50,15 @@ import javax.crypto.spec.SecretKeySpec;
 
 import jdk.crypto.jniprovider.NativeCrypto;
 
+/**
+* Native KeyAgreement implementation for ECDH.
+*/
 public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
+
+    private static final NativeCrypto nativeCrypto = NativeCrypto.getNativeCrypto();
+
+    /* true if OPENSSL_NO_EC2M is defined */
+    private static final boolean no2m = nativeCrypto.ECNoGF2m();
 
     /* private key, if initialized */
     private ECPrivateKeyImpl privateKey;
@@ -60,7 +69,14 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
     /* length of the secret to be derived */
     private int secretLen;
 
-    private static final NativeCrypto nativeCrypto = NativeCrypto.getNativeCrypto();
+    /* true if no2m and one of the keys has a ECFieldF2m */
+    private boolean useJavaImplementation;
+
+    /* the java implementation, initialized if needed */
+    private ECDHKeyAgreement javaImplementation = null;
+
+    /* the ECDHKeyAgreement class used for reflection, initialized if needed */
+    private Class<?> runnable = null;
 
     /**
      * Constructs a new NativeECDHKeyAgreement.
@@ -78,6 +94,21 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
         // attempt to translate the key if it is not an ECKey
         this.privateKey = (ECPrivateKeyImpl) ECKeyFactory.toECKey(key);
         this.publicKey = null;
+
+        if (no2m && this.privateKey.isECFieldF2m()) {
+            this.useJavaImplementation = true;
+            javaImplementation = new ECDHKeyAgreement();
+            try {
+                runnable = Class.forName("sun.security.ec.ECDHKeyAgreement", true, ClassLoader.getSystemClassLoader());
+
+                // invoke the engineInit method from the ECDHKeyAgreement class
+                Method engineInit = runnable.getDeclaredMethod("engineInit", Key.class, SecureRandom.class);
+                engineInit.setAccessible(true);
+                engineInit.invoke(javaImplementation, key, random);
+            } catch (Exception e) {
+                System.out.println(e.toString());
+            }
+        }
     }
 
     @Override
@@ -93,32 +124,69 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
     @Override
     protected Key engineDoPhase(Key key, boolean lastPhase)
             throws InvalidKeyException, IllegalStateException {
-        if (this.privateKey == null) {
-            throw new IllegalStateException("Not initialized");
-        }
-        if (this.publicKey != null) {
-            throw new IllegalStateException("Phase already executed");
-        }
-        if (!lastPhase) {
-            throw new IllegalStateException
-                ("Only two party agreement supported, lastPhase must be true");
-        }
-        if (!(key instanceof PublicKey)) {
-            throw new InvalidKeyException
-                ("Key must be an instance of PublicKey");
-        }
-        // attempt to translate the key if it is not an ECKey
-        this.publicKey = (ECPublicKeyImpl) ECKeyFactory.toECKey(key);
+        if (!this.useJavaImplementation) {
+            if (this.privateKey == null) {
+                throw new IllegalStateException("Not initialized");
+            }
+            if (this.publicKey != null) {
+                throw new IllegalStateException("Phase already executed");
+            }
+            if (!lastPhase) {
+                throw new IllegalStateException
+                    ("Only two party agreement supported, lastPhase must be true");
+            }
+            if (!(key instanceof PublicKey)) {
+                throw new InvalidKeyException
+                    ("Key must be an instance of PublicKey");
+            }
+            // attempt to translate the key if it is not an ECKey
+            this.publicKey = (ECPublicKeyImpl) ECKeyFactory.toECKey(key);
 
-        ECParameterSpec params = this.publicKey.getParams();
-        int keyLenBits = params.getCurve().getField().getFieldSize();
-        this.secretLen = (keyLenBits + 7) >> 3;
+            ECParameterSpec params = this.publicKey.getParams();
+            int keyLenBits = params.getCurve().getField().getFieldSize();
+            this.secretLen = (keyLenBits + 7) >> 3;
 
+            if (no2m && this.publicKey.isECFieldF2m()) {
+                this.useJavaImplementation = true;
+                javaImplementation = new ECDHKeyAgreement();
+                try {
+                    runnable = Class.forName("sun.security.ec.ECDHKeyAgreement", true, ClassLoader.getSystemClassLoader());
+
+                    // invoke the engineInit method from the ECDHKeyAgreement class
+                    Method engineInit = runnable.getDeclaredMethod("engineInit", Key.class, SecureRandom.class);
+                    engineInit.setAccessible(true);
+                    engineInit.invoke(javaImplementation, this.privateKey, new SecureRandom());
+                } catch (Exception e) {
+                    System.out.println(e.toString());
+                }
+            }
+        }
+        if (this.useJavaImplementation) {
+            try {
+                // invoke the engineDoPhase method from the ECDHKeyAgreement class
+                Method engineDoPhase = runnable.getDeclaredMethod("engineDoPhase", Key.class, boolean.class);
+                engineDoPhase.setAccessible(true);
+                return (Key) engineDoPhase.invoke(javaImplementation, key, lastPhase);
+            } catch (Exception e) {
+                System.out.println(e.toString());
+            }
+        }
         return null;
     }
 
     @Override
     protected byte[] engineGenerateSecret() throws IllegalStateException {
+        if (this.useJavaImplementation) {
+            try {
+                // invoke the engineGenerateSecret method from the ECDHKeyAgreement class
+                Method engineGenerateSecret = runnable.getDeclaredMethod("engineGenerateSecret");
+                engineGenerateSecret.setAccessible(true);
+                return (byte[]) engineGenerateSecret.invoke(javaImplementation);
+            } catch (Exception e) {
+                System.out.println(e.toString());
+            }
+        }
+
         byte[] secret = new byte[this.secretLen];
         try {
             engineGenerateSecret(secret, 0);
@@ -131,6 +199,17 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
     @Override
     protected int engineGenerateSecret(byte[] sharedSecret, int offset)
             throws IllegalStateException, ShortBufferException {
+        if (this.useJavaImplementation) {
+            try {
+                // invoke the engineGenerateSecret method from the ECDHKeyAgreement class
+                Method engineGenerateSecret = runnable.getDeclaredMethod("engineGenerateSecret", byte[].class, int.class);
+                engineGenerateSecret.setAccessible(true);
+                return (int) engineGenerateSecret.invoke(javaImplementation, sharedSecret, offset);
+            } catch (Exception e) {
+                System.out.println(e.toString());
+            }
+        }
+
         if ((offset + this.secretLen) > sharedSecret.length) {
             throw new ShortBufferException("Need " + this.secretLen
                 + " bytes, only " + (sharedSecret.length - offset)
@@ -141,14 +220,14 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
         }
         long nativePublicKey = this.publicKey.getNativePtr();
         long nativePrivateKey = this.privateKey.getNativePtr();
-        if ((nativePublicKey < 0) || (nativePrivateKey < 0)) {
+        if ((nativePublicKey == -1) || (nativePrivateKey == -1)) {
             throw new ProviderException("Could not convert keys to native format");
         }
         int ret;
         synchronized (this.privateKey) {
             ret = nativeCrypto.ECDeriveKey(nativePublicKey, nativePrivateKey, sharedSecret, offset, this.secretLen);
         }
-        if (ret < 0) {
+        if (ret == -1) {
             throw new ProviderException("Could not derive key");
         }
         return this.secretLen;

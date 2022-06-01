@@ -251,4 +251,6 @@ public class NativeCrypto {
                                         int secretOffset,
                                         int secretLen);
 
+    public final native boolean ECNoGF2m();
+
 }

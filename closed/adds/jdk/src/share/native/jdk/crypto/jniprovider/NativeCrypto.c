@@ -57,6 +57,7 @@ int OSSL102_RSA_set0_factors(RSA *, BIGNUM *, BIGNUM *);
 int OSSL102_RSA_set0_crt_params(RSA *, BIGNUM *, BIGNUM *, BIGNUM *);
 
 /* Header for EC algorithm */
+int OSSL_NO_EC2M = 0;
 int setECPublicCoordinates(EC_KEY *, BIGNUM *, BIGNUM *, int);
 int setECPublicKey(EC_KEY *, BIGNUM *, BIGNUM *, int);
 
@@ -420,6 +421,10 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     } else {
         EC_set_public_key = &setECPublicCoordinates;
     }
+    if ((NULL == OSSL_EC_GROUP_new_curve_GF2m) || (NULL == OSSL_EC_POINT_set_affine_coordinates_GF2m)) {
+        /* the OPENSSL_NO_EC2M flag is set and the EC2m methods are unavailable */
+        OSSL_NO_EC2M = 1;
+    }
 
     if ((NULL == OSSL_error_string) ||
         (NULL == OSSL_error_string_n) ||
@@ -469,11 +474,9 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
         (NULL == OSSL_EC_KEY_set_private_key) ||
         (NULL == OSSL_BN_CTX_new) ||
         (NULL == OSSL_EC_GROUP_new_curve_GFp) ||
-        (NULL == OSSL_EC_GROUP_new_curve_GF2m) ||
         (NULL == OSSL_EC_KEY_set_group) ||
         (NULL == OSSL_EC_POINT_new) ||
         (NULL == OSSL_EC_POINT_set_affine_coordinates_GFp) ||
-        (NULL == OSSL_EC_POINT_set_affine_coordinates_GF2m) ||
         (NULL == OSSL_EC_GROUP_set_generator) ||
         (NULL == OSSL_EC_KEY_get0_group) ||
         (NULL == OSSL_EC_POINT_free) ||
@@ -1952,6 +1955,19 @@ int OSSL102_RSA_set0_crt_params(RSA *r2, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqm
     return 1;
 }
 
+/* Returns true if EC 2m is disabled, and false otherwise.
+ *
+ * Class:     jdk_crypto_jniprovider_NativeCrypto
+ * Method:    ECNoGF2m
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_jdk_crypto_jniprovider_NativeCrypto_ECNoGF2m
+  (JNIEnv *env, jclass obj)
+{
+    return OSSL_NO_EC2M;
+}
+
 /* Create an EC Public Key
  *
  * Class:     jdk_crypto_jniprovider_NativeCrypto
@@ -2218,6 +2234,10 @@ JNIEXPORT jlong JNICALL
 Java_jdk_crypto_jniprovider_NativeCrypto_ECEncodeGF2m
   (JNIEnv *env, jclass obj, jbyteArray a, jint aLen, jbyteArray b, jint bLen, jbyteArray p, jint pLen, jbyteArray x, jint xLen, jbyteArray y, jint yLen, jbyteArray n, jint nLen, jbyteArray h, jint hLen)
 {
+    if (OSSL_NO_EC2M) {
+        return -1;
+    }
+
     EC_KEY *key = NULL;
     unsigned char *nativeA = NULL;
     unsigned char *nativeB = NULL;
@@ -2443,6 +2463,10 @@ setECPublicCoordinates(EC_KEY *key, BIGNUM *x, BIGNUM *y, int field)
 int
 setECPublicKey(EC_KEY *key, BIGNUM *x, BIGNUM *y, int field)
 {
+    if (OSSL_NO_EC2M && field) {
+        return 0;
+    }
+
     const EC_GROUP *group = (*OSSL_EC_KEY_get0_group)(key);
     BN_CTX *ctx = (*OSSL_BN_CTX_new)();
     EC_POINT *publicKey = (*OSSL_EC_POINT_new)(group);
