@@ -229,7 +229,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
      * @return true if the field is an instance of ECFieldF2m, false otherwise
      */
     boolean isECFieldF2m() {
-        return (this.getParams().getCurve().getField() instanceof ECFieldF2m);
+        return this.params.getCurve().getField() instanceof ECFieldF2m;
     }
 
     /**
@@ -240,16 +240,15 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         if (nativeECKey == 0x0) {
             synchronized (this) {
                 if (nativeECKey == 0x0) {
-                    ECParameterSpec parameters = this.getParams();
-                    ECPoint generator = parameters.getGenerator();
-                    EllipticCurve curve = parameters.getCurve();
+                    ECPoint generator = this.params.getGenerator();
+                    EllipticCurve curve = this.params.getCurve();
                     ECField field = curve.getField();
                     byte[] a = curve.getA().toByteArray();
                     byte[] b = curve.getB().toByteArray();
                     byte[] gx = generator.getAffineX().toByteArray();
                     byte[] gy = generator.getAffineY().toByteArray();
-                    byte[] n = parameters.getOrder().toByteArray();
-                    byte[] h = BigInteger.valueOf(parameters.getCofactor()).toByteArray();
+                    byte[] n = this.params.getOrder().toByteArray();
+                    byte[] h = BigInteger.valueOf(this.params.getCofactor()).toByteArray();
                     byte[] p = new byte[0];
                     if (field instanceof ECFieldFp) {
                         p = ((ECFieldFp)field).getP().toByteArray();
