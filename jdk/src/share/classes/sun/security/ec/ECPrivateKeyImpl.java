@@ -256,6 +256,8 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
                     } else if (field instanceof ECFieldF2m) {
                         p = ((ECFieldF2m)field).getReductionPolynomial().toByteArray();
                         nativeECKey = nativeCrypto.ECEncodeGF2m(a, a.length, b, b.length, p, p.length, gx, gx.length, gy, gy.length, n, n.length, h, h.length);
+                    } else {
+                        nativeECKey = -1;
                     }
                     if (nativeECKey != -1) {
                         nativeCrypto.createECKeyCleaner(this, nativeECKey);

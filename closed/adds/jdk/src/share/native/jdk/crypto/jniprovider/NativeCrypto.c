@@ -406,8 +406,6 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     OSSL_EC_GROUP_new_curve_GF2m = (OSSL_EC_GROUP_new_curve_GF2m_t*)find_crypto_symbol(crypto_library, "EC_GROUP_new_curve_GF2m");
     OSSL_EC_KEY_set_group = (OSSL_EC_KEY_set_group_t*)find_crypto_symbol(crypto_library, "EC_KEY_set_group");
     OSSL_EC_POINT_new = (OSSL_EC_POINT_new_t*)find_crypto_symbol(crypto_library, "EC_POINT_new");
-    OSSL_EC_POINT_set_affine_coordinates_GFp = (OSSL_EC_POINT_set_affine_coordinates_GFp_t*)find_crypto_symbol(crypto_library, "EC_POINT_set_affine_coordinates_GFp");
-    OSSL_EC_POINT_set_affine_coordinates_GF2m = (OSSL_EC_POINT_set_affine_coordinates_GF2m_t*)find_crypto_symbol(crypto_library, "EC_POINT_set_affine_coordinates_GF2m");
     OSSL_EC_GROUP_set_generator = (OSSL_EC_GROUP_set_generator_t*)find_crypto_symbol(crypto_library, "EC_GROUP_set_generator");
     OSSL_EC_KEY_get0_group = (OSSL_EC_KEY_get0_group_t*)find_crypto_symbol(crypto_library, "EC_KEY_get0_group");
     OSSL_EC_POINT_free = (OSSL_EC_POINT_free_t*)find_crypto_symbol(crypto_library, "EC_POINT_free");
@@ -415,11 +413,19 @@ JNIEXPORT jint JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     OSSL_BN_CTX_free = (OSSL_BN_CTX_free_t*)find_crypto_symbol(crypto_library, "BN_CTX_free");
     OSSL_EC_KEY_set_public_key = (OSSL_EC_KEY_set_public_key_t*)find_crypto_symbol(crypto_library, "EC_KEY_set_public_key");
     OSSL_EC_KEY_check_key = (OSSL_EC_KEY_check_key_t*)find_crypto_symbol(crypto_library, "EC_KEY_check_key");
+    OSSL_EC_POINT_set_affine_coordinates_GFp = (OSSL_EC_POINT_set_affine_coordinates_GFp_t*)find_crypto_symbol(crypto_library, "EC_POINT_set_affine_coordinates");
     if (NULL == OSSL_EC_KEY_set_public_key_affine_coordinates) {
         /* method missing in OpenSSL version 1.0.0 */
         EC_set_public_key = &setECPublicKey;
     } else {
         EC_set_public_key = &setECPublicCoordinates;
+    }
+    if (NULL == OSSL_EC_POINT_set_affine_coordinates_GFp) {
+        /* deprecated in OpenSSL version 1.1.1 */
+        OSSL_EC_POINT_set_affine_coordinates_GFp = (OSSL_EC_POINT_set_affine_coordinates_GFp_t*)find_crypto_symbol(crypto_library, "EC_POINT_set_affine_coordinates_GFp");
+        OSSL_EC_POINT_set_affine_coordinates_GF2m = (OSSL_EC_POINT_set_affine_coordinates_GF2m_t*)find_crypto_symbol(crypto_library, "EC_POINT_set_affine_coordinates_GF2m");
+    } else {
+        OSSL_EC_POINT_set_affine_coordinates_GF2m = (OSSL_EC_POINT_set_affine_coordinates_GF2m_t*)find_crypto_symbol(crypto_library, "EC_POINT_set_affine_coordinates");
     }
     if ((NULL == OSSL_EC_GROUP_new_curve_GF2m) || (NULL == OSSL_EC_POINT_set_affine_coordinates_GF2m)) {
         /* the OPENSSL_NO_EC2M flag is set and the EC2m methods are unavailable */
@@ -2234,10 +2240,6 @@ JNIEXPORT jlong JNICALL
 Java_jdk_crypto_jniprovider_NativeCrypto_ECEncodeGF2m
   (JNIEnv *env, jclass obj, jbyteArray a, jint aLen, jbyteArray b, jint bLen, jbyteArray p, jint pLen, jbyteArray x, jint xLen, jbyteArray y, jint yLen, jbyteArray n, jint nLen, jbyteArray h, jint hLen)
 {
-    if (OSSL_NO_EC2M) {
-        return -1;
-    }
-
     EC_KEY *key = NULL;
     unsigned char *nativeA = NULL;
     unsigned char *nativeB = NULL;
@@ -2257,6 +2259,10 @@ Java_jdk_crypto_jniprovider_NativeCrypto_ECEncodeGF2m
     EC_POINT *generator = NULL;
     BN_CTX *ctx = NULL;
     int ret = 0;
+
+    if (OSSL_NO_EC2M) {
+        return -1;
+    }
 
     nativeA = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, a, 0));
     if (NULL == nativeA) {
@@ -2463,14 +2469,14 @@ setECPublicCoordinates(EC_KEY *key, BIGNUM *x, BIGNUM *y, int field)
 int
 setECPublicKey(EC_KEY *key, BIGNUM *x, BIGNUM *y, int field)
 {
-    if (OSSL_NO_EC2M && field) {
-        return 0;
-    }
-
     const EC_GROUP *group = (*OSSL_EC_KEY_get0_group)(key);
     BN_CTX *ctx = (*OSSL_BN_CTX_new)();
     EC_POINT *publicKey = (*OSSL_EC_POINT_new)(group);
     int ret = 0;
+
+    if (OSSL_NO_EC2M && field) {
+        return ret;
+    }
 
     if ((NULL == ctx) || (NULL == group) || (NULL == publicKey)) {
         (*OSSL_BN_CTX_free)(ctx);

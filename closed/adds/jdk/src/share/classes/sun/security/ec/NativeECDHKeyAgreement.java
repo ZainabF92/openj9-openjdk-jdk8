@@ -84,9 +84,6 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
     /* length of the secret to be derived */
     private int secretLen;
 
-    /* true if noGF2m and ECFieldF2m is used */
-    private boolean useJavaImplementation;
-
     /* the java implementation, initialized if needed */
     private ECDHKeyAgreement javaImplementation;
 
@@ -133,7 +130,7 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
         } else if (curveSupported.containsKey(this.curve) && curveSupported.get(this.curve).equals(false)) {
             this.useJavaImplementation(key, random, null);
         } else {
-            this.useJavaImplementation = false;
+            this.javaImplementation = null;
         }
     }
 
@@ -150,7 +147,7 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
     @Override
     protected Key engineDoPhase(Key key, boolean lastPhase)
             throws InvalidKeyException, IllegalStateException {
-        if (this.useJavaImplementation) {
+        if (this.javaImplementation != null) {
             return this.javaImplementation.engineDoPhase(key, lastPhase);
         }
         if (this.privateKey == null) {
@@ -179,7 +176,7 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
 
     @Override
     protected byte[] engineGenerateSecret() throws IllegalStateException {
-        if (this.useJavaImplementation) {
+        if (this.javaImplementation != null) {
             return this.javaImplementation.engineGenerateSecret();
         }
         byte[] secret = new byte[this.secretLen];
@@ -194,7 +191,7 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
     @Override
     protected int engineGenerateSecret(byte[] sharedSecret, int offset)
             throws IllegalStateException, ShortBufferException {
-        if (this.useJavaImplementation) {
+        if (this.javaImplementation != null) {
             return this.javaImplementation.engineGenerateSecret(sharedSecret, offset);
         }
         if ((offset + this.secretLen) > sharedSecret.length) {
@@ -258,7 +255,6 @@ public final class NativeECDHKeyAgreement extends KeyAgreementSpi {
      * @param type the type of key that is not supported
      */
     private void useJavaImplementation (Key key, SecureRandom random, String type) throws InvalidKeyException {
-        this.useJavaImplementation = true;
         this.javaImplementation = new ECDHKeyAgreement();
         this.javaImplementation.engineInit(key, random);
         if ((type != null) && (nativeCryptTrace != null)) {

@@ -174,6 +174,8 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
                         fieldType = 1;
                         p = ((ECFieldF2m)field).getReductionPolynomial().toByteArray();
                         nativeECKey = nativeCrypto.ECEncodeGF2m(a, a.length, b, b.length, p, p.length, gx, gx.length, gy, gy.length, n, n.length, h, h.length);
+                    } else {
+                        nativeECKey = -1;
                     }
                     if (nativeECKey != -1) {
                         nativeCrypto.createECKeyCleaner(this, nativeECKey);
